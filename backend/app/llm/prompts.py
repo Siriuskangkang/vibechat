@@ -10,7 +10,7 @@ def emotion_user(text: str) -> str:
     return (
         f'文本："{text}"\n\n'
         "要求输出 JSON："
-        '{"primary":str主情绪, "secondary":[str次要], '
+        '{"primary":str中文主情绪词(必须是中文,如:焦虑/喜悦/愤怒/低落/平静/迷茫/孤独/疲惫/紧张/失落/委屈/释然), "secondary":[str中文次要情绪], '
         '"valence":float∈[-1,1]正负向, "arousal":float∈[0,1]激动度, '
         '"intensity":float∈[0,1]强度, "social":float∈[0,1]倾诉倾向, '
         '"keywords":[str], "reading":str≤30字解读, '

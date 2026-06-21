@@ -6,3 +6,9 @@ backend/.env
 node_modules/
 .next/
 .DS_Store
+.omc/
+.playwright-mcp/
+home-redesign.png
+home-v2.png
+analyze-v2.png
+leave-overlay.png

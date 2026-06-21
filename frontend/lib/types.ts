@@ -24,5 +24,7 @@ export interface ChatMessage {
   content: string;
   ts: number;
   avatar?: Avatar;
+  isSelf?: boolean;
+  isHistory?: boolean;
 }
 export interface RoomMood { vector: number[]; resonance: number; online: number; }
