@@ -17,10 +17,11 @@ backend/.env
 # 数据库
 *.db
 
-# 临时截图 / 设计稿
+# 临时截图 / 设计稿（docs 下的产品截图除外，允许入库）
 *.png
 *.jpg
 *.jpeg
+!docs/*.png
 
 # 系统 / 工具
 .DS_Store
