@@ -5,6 +5,8 @@ import { ensureSession } from "@/lib/session";
 import { postJSON } from "@/lib/api";
 import type { MatchResult } from "@/lib/types";
 import { LoadingOverlay } from "@/components/LoadingOverlay";
+import { StarField } from "@/components/StarField";
+import { addHistory } from "@/lib/history";
 
 const EXAMPLES = [
   { text: "明天要汇报，睡不着，脑子停不下来", tone: "#6D5BFF", label: "焦虑" },
@@ -31,6 +33,17 @@ export default function Home() {
       await ensureSession();
       const result = await postJSON<MatchResult>("/api/emotion/analyze", { text: content });
       sessionStorage.setItem("match", JSON.stringify(result));
+      const hid = addHistory({
+        text: content,
+        primary: result.emotion.primary,
+        reading: result.emotion.reading,
+        vector: result.emotion.vector,
+        roomSlug: result.room.slug,
+        roomName: result.room.name,
+        roomColor: result.room.color,
+        affinity: result.affinity,
+      });
+      sessionStorage.setItem("currentHistoryId", hid);
       router.push("/analyze");
     } catch (e) {
       setError(e instanceof Error ? e.message : "分析失败，请重试");
@@ -44,13 +57,22 @@ export default function Home() {
       {loading && (
         <LoadingOverlay title="正在听你的情绪…" subtitle="AI 正在读懂你的色彩" />
       )}
-      {/* 呼吸光晕 */}
+      <a href="/history" className="absolute top-5 right-5 z-10 text-sm text-ink-dim hover:text-ink px-4 py-2 rounded-full bg-surface border border-line hover:border-line-strong transition-all duration-300">
+        我的轨迹
+      </a>
+      <StarField />
+      {/* 多层情绪光晕 */}
       <div
-        className="pointer-events-none absolute top-[22%] left-1/2 w-[560px] h-[560px] rounded-full animate-breathe"
-        style={{
-          background: "radial-gradient(circle, rgba(109,91,255,0.32), transparent 65%)",
-          filter: "blur(40px)",
-        }}
+        className="pointer-events-none absolute top-[16%] left-1/2 w-[600px] h-[600px] rounded-full animate-breathe"
+        style={{ background: "radial-gradient(circle, rgba(109,91,255,0.3), transparent 65%)", filter: "blur(45px)" }}
+      />
+      <div
+        className="pointer-events-none absolute bottom-[8%] right-[6%] w-[360px] h-[360px] rounded-full animate-float"
+        style={{ background: "radial-gradient(circle, rgba(201,168,106,0.18), transparent 65%)", filter: "blur(50px)" }}
+      />
+      <div
+        className="pointer-events-none absolute bottom-[16%] left-[4%] w-[320px] h-[320px] rounded-full animate-float"
+        style={{ background: "radial-gradient(circle, rgba(91,207,168,0.14), transparent 65%)", filter: "blur(50px)", animationDelay: "1.5s" }}
       />
 
       <div className="relative w-full max-w-xl flex flex-col items-center">

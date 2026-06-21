@@ -8,12 +8,14 @@ import { MoodJourney } from "@/components/MoodJourney";
 import { MessageBubble } from "@/components/MessageBubble";
 import { LoadingOverlay } from "@/components/LoadingOverlay";
 import { postJSON } from "@/lib/api";
+import { updateHistory } from "@/lib/history";
 
 function RoomInner({ slug, sessionId, vector }: { slug: string; sessionId: string; vector: number[] }) {
   const router = useRouter();
   const { messages, mood, send } = useRoom(slug, vector, sessionId);
   const [input, setInput] = useState("");
   const [leaving, setLeaving] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   const [left, setLeft] = useState<null | {
     summary: string; takeaway: string;
     mood_end: { valence: number; arousal: number }; start_vector: number[];
@@ -27,6 +29,10 @@ function RoomInner({ slug, sessionId, vector }: { slug: string; sessionId: strin
         summary: string; takeaway: string;
         mood_end: { valence: number; arousal: number }; start_vector: number[];
       }>(`/api/rooms/${slug}/leave`, { session_id: sessionId, dialogue });
+      const hid = sessionStorage.getItem("currentHistoryId");
+      if (hid) {
+        updateHistory(hid, { summary: r.summary, takeaway: r.takeaway, moodEnd: r.mood_end });
+      }
       setLeft(r);
     } catch {
       setLeft({
@@ -46,6 +52,10 @@ function RoomInner({ slug, sessionId, vector }: { slug: string; sessionId: strin
       setInput("");
     }
   }
+
+  const historyMsgs = messages.filter((m) => m.isHistory);
+  const newMsgs = messages.filter((m) => !m.isHistory);
+  const visibleHistory = showHistory ? historyMsgs : historyMsgs.slice(-3);
 
   if (left) {
     return (
@@ -88,9 +98,23 @@ function RoomInner({ slug, sessionId, vector }: { slug: string; sessionId: strin
           </button>
         </header>
 
-        <div className="flex-1 overflow-y-auto px-5 py-3 space-y-4">
-          {messages.map((m, i) => (
-            <MessageBubble key={i} msg={m} />
+        <div className="flex-1 overflow-y-auto px-5 py-3 space-y-3">
+          {historyMsgs.length > 3 && !showHistory && (
+            <button
+              onClick={() => setShowHistory(true)}
+              className="msg-in mx-auto block text-xs text-ink-faint hover:text-ink-dim py-1.5 transition-colors"
+            >
+              ↑ 展开进房前的 {historyMsgs.length} 条消息
+            </button>
+          )}
+          {visibleHistory.map((m, i) => (
+            <MessageBubble key={`h${i}`} msg={m} />
+          ))}
+          {historyMsgs.length > 0 && newMsgs.length > 0 && (
+            <div className="text-center text-[10px] text-ink-faint py-1">— 进房后 —</div>
+          )}
+          {newMsgs.map((m, i) => (
+            <MessageBubble key={`n${i}`} msg={m} />
           ))}
         </div>
 
