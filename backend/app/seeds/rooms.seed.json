@@ -1,0 +1,8 @@
+[
+  {"slug":"late-night-anxiety","name":"深夜焦虑","description":"被明天的某件事压着，脑子停不下来，睡不着","anchor_vector":[-0.6,0.80,0.80,0.60],"color":"#6D5BFF","vibe":"紧绷、低频嗡鸣、深夜"},
+  {"slug":"emo","name":"emo 时刻","description":"有点闷，说不上来，情绪低落","anchor_vector":[-0.50,0.30,0.60,0.55],"color":"#7C8DB5","vibe":"低沉、缓慢、留白"},
+  {"slug":"joyful-share","name":"开心想分享","description":"有开心事，想抖出来，希望有人接住这份高兴","anchor_vector":[0.70,0.60,0.60,0.75],"color":"#FFB26B","vibe":"明亮、上扬、暖"},
+  {"slug":"vent-anger","name":"愤怒吐槽","description":"被什么气到了，想先骂为敬","anchor_vector":[-0.60,0.85,0.85,0.70],"color":"#FF6B5E","vibe":"炽烈、张力、快"},
+  {"slug":"calm-solo","name":"平静独处","description":"今天挺安静的，想随便待会儿","anchor_vector":[0.30,0.15,0.25,0.20],"color":"#5BCFA8","vibe":"柔和、留白、慢"},
+  {"slug":"lost-advice","name":"迷茫求建议","description":"卡住了，想说说正纠结的事，也许能捋一捋","anchor_vector":[-0.20,0.40,0.50,0.80],"color":"#9B7BE0","vibe":"思忖、低张力、求帮"}
+]
