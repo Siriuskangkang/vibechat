@@ -28,3 +28,6 @@ export interface ChatMessage {
   isHistory?: boolean;
 }
 export interface RoomMood { vector: number[]; resonance: number; online: number; }
+export interface Member { id: string; color: string; shape: string; }
+export interface TypingState { nickname: string; color: string; expireAt: number; }
+export interface Reaction { id: string; color: string; target_ts: number; nickname: string; }

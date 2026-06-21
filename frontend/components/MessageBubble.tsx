@@ -1,4 +1,5 @@
-import type { CSSProperties } from "react";
+"use client";
+import { useRef, type CSSProperties } from "react";
 import { emotionHsl } from "@/lib/color";
 import type { ChatMessage } from "@/lib/types";
 
@@ -8,7 +9,6 @@ function fmtTime(ts?: number) {
 }
 
 // 头像形状：用 clip-path / border-radius 让每个用户的几何形状也不同。
-// （drop-shadow 会跟随 clip-path 的实际轮廓发光，box-shadow 不会，故用 filter 包一层）
 function avatarStyle(shape?: string): CSSProperties {
   switch (shape) {
     case "square": return { borderRadius: "5px" };
@@ -21,7 +21,7 @@ function avatarStyle(shape?: string): CSSProperties {
   }
 }
 
-export function MessageBubble({ msg }: { msg: ChatMessage }) {
+export function MessageBubble({ msg, onReaction }: { msg: ChatMessage; onReaction?: (ts: number) => void }) {
   const isSelf = !!msg.isSelf;
   const isHost = msg.role === "ai";
   const isBot = msg.role === "bot";
@@ -29,6 +29,20 @@ export function MessageBubble({ msg }: { msg: ChatMessage }) {
   const color =
     msg.avatar?.color ||
     (isHost ? "#9B7BE0" : isBot ? "#7C8DB5" : emotionHsl([0, 0.4, 0.4, 0.4]));
+  const reactTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // 长按(移动) / 悬停 0.4s(桌面) → 送一颗「接住你」光点；仅他人真人消息
+  const armReact = () => {
+    if (isSelf || isSystem || !onReaction || !msg.ts) return;
+    if (reactTimer.current) clearTimeout(reactTimer.current);
+    reactTimer.current = setTimeout(() => onReaction(msg.ts!), 400);
+  };
+  const cancelReact = () => {
+    if (reactTimer.current) {
+      clearTimeout(reactTimer.current);
+      reactTimer.current = null;
+    }
+  };
 
   // 主持 / 兜底 bot：居中系统卡片
   if (isSystem) {
@@ -59,7 +73,7 @@ export function MessageBubble({ msg }: { msg: ChatMessage }) {
     );
   }
 
-  // 真人：自己右对齐 + 强调气泡，他人左对齐 + 玻璃气泡
+  // 真人：自己右对齐 + 强调气泡，他人左对齐 + 玻璃气泡（情绪色光晕）
   const shape = msg.avatar?.shape;
   return (
     <div className={`msg-in flex ${isSelf ? "justify-end" : "justify-start"} gap-2.5`}>
@@ -68,10 +82,18 @@ export function MessageBubble({ msg }: { msg: ChatMessage }) {
           <div className="w-8 h-8" style={{ background: color, ...avatarStyle(shape) }} />
         </div>
       )}
-      <div className={`max-w-[75%] flex flex-col ${isSelf ? "items-end" : "items-start"}`}>
+      <div
+        className={`max-w-[75%] flex flex-col ${isSelf ? "items-end" : "items-start"}`}
+        data-ts={msg.ts}
+        onMouseEnter={armReact}
+        onMouseLeave={cancelReact}
+        onTouchStart={armReact}
+        onTouchEnd={cancelReact}
+      >
         <span className="text-[11px] text-ink-faint mb-0.5">{isSelf ? "你" : msg.nickname}</span>
         <div
           className={`rounded-[18px] px-4 py-2.5 ${isSelf ? "bg-ink text-bg" : "bg-surface border border-line text-ink"}`}
+          style={!isSelf ? { boxShadow: `0 0 22px -6px ${color}` } : undefined}
         >
           <p className="text-sm font-light leading-relaxed break-words">{msg.content}</p>
         </div>

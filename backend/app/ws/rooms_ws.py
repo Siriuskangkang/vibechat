@@ -1,4 +1,5 @@
 import asyncio
+import hashlib
 import os
 import time
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
@@ -24,14 +25,30 @@ def _ts() -> int:
     return int(time.time() * 1000)
 
 
+def _member_id(session_id: str) -> str:
+    """匿名成员 id：session_id 的 md5 前 6 位短哈希，不直接广播 session_id。"""
+    return hashlib.md5(session_id.encode()).hexdigest()[:6] if session_id else ""
+
+
 async def _broadcast_state(slug: str):
+    """推送 presence（含成员快照）+ room_mood。presence.members 供前端画情绪星云。"""
+    members_info = manager.members(slug)
+    members = [
+        {
+            "id": _member_id(info.get("session_id", "")),
+            "color": (info.get("avatar") or {}).get("color"),
+            "shape": (info.get("avatar") or {}).get("shape"),
+        }
+        for info in members_info.values()
+    ]
+    online = len(members_info)
+    await manager.broadcast(slug, {"type": "presence", "online": online, "members": members})
     vecs = manager.vectors(slug)
-    await manager.broadcast(slug, {"type": "presence", "online": len(vecs)})
     await manager.broadcast(slug, {
         "type": "room_mood",
         "vector": room_mood(vecs),
         "resonance": round(resonance(vecs), 2),
-        "online": len(vecs),
+        "online": online,
     })
 
 
@@ -114,7 +131,9 @@ async def room_ws(websocket: WebSocket, slug: str):
         used = {m.nickname for m in message_repo.list_messages(db, room.id)}
         nickname = gen_nickname(slug, session_id, used)
         avatar = make_avatar(session_id, slug, vector[0], vector[1])
-        await manager.join(slug, websocket, {"nickname": nickname, "avatar": avatar, "vector": vector})
+        await manager.join(slug, websocket, {
+            "nickname": nickname, "avatar": avatar, "vector": vector, "session_id": session_id,
+        })
 
         await manager.broadcast(slug, {"type": "member_join", "nickname": nickname, "avatar": avatar})
         await _broadcast_state(slug)
@@ -152,7 +171,8 @@ async def room_ws(websocket: WebSocket, slug: str):
 
         while True:
             data = await websocket.receive_json()
-            if data.get("type") == "message":
+            kind = data.get("type")
+            if kind == "message":
                 content = (data.get("content") or "").strip()
                 if not content:
                     continue
@@ -163,6 +183,19 @@ async def room_ws(websocket: WebSocket, slug: str):
                 }, exclude=websocket)
                 # 有人发言，重置冷场计时
                 _arm_stall_watchdog(slug, room.id, room.slug, room.vibe)
+            elif kind == "typing":
+                # 纯事件透传：把「某人在输入」广播给他人（不含发送者），不落库、不调 LLM
+                await manager.broadcast(slug, {
+                    "type": "typing", "nickname": nickname,
+                    "color": avatar.get("color"), "ts": _ts(),
+                }, exclude=websocket)
+            elif kind == "reaction":
+                # 共鸣光点：透传给他人，飘向 target_ts 气泡。刻意不落库、不计数。
+                await manager.broadcast(slug, {
+                    "type": "reaction", "nickname": nickname,
+                    "color": avatar.get("color"),
+                    "target_ts": data.get("target_ts"), "ts": _ts(),
+                }, exclude=websocket)
     except WebSocketDisconnect:
         pass
     finally:

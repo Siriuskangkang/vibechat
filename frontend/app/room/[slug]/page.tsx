@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useRoom } from "@/lib/ws";
 import { MoodField } from "@/components/MoodField";
@@ -10,10 +10,22 @@ import { LoadingOverlay } from "@/components/LoadingOverlay";
 import { postJSON } from "@/lib/api";
 import { updateHistory } from "@/lib/history";
 import { HelpCard } from "@/components/HelpCard";
+import { RoomNebula } from "@/components/RoomNebula";
+import { EmotionWeather } from "@/components/EmotionWeather";
+import { ResonancePulse } from "@/components/ResonancePulse";
+import { TypingPulse } from "@/components/TypingPulse";
+import { ReactionLayer } from "@/components/ReactionLayer";
 
 function RoomInner({ slug, sessionId, vector }: { slug: string; sessionId: string; vector: number[] }) {
   const router = useRouter();
-  const { messages, mood, send } = useRoom(slug, vector, sessionId);
+  const { messages, mood, members, typing, reactions, send, sendTyping, sendReaction } = useRoom(slug, vector, sessionId);
+  // 消息区自动滚到底：用户停在底部附近时跟随新消息；向上翻看历史时不打断
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const stickToBottom = useRef(true);
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el && stickToBottom.current) el.scrollTop = el.scrollHeight;
+  }, [messages.length]);
   const [input, setInput] = useState("");
   const [leaving, setLeaving] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -79,15 +91,19 @@ function RoomInner({ slug, sessionId, vector }: { slug: string; sessionId: strin
   }
 
   return (
-    <main className="relative min-h-screen flex flex-col">
+    <main className="relative h-[100dvh] flex flex-col overflow-hidden">
       {leaving && <LoadingOverlay title="正在为你梳理这段情绪…" subtitle="AI 在回看你们的对话" />}
+      <RoomNebula members={members} />
+      <ResonancePulse resonance={mood?.resonance || 0} />
+      <ReactionLayer reactions={reactions} />
       <MoodField vector={mood?.vector || vector}>
-        <header className="flex items-center justify-between p-5">
+        <header className="flex items-center justify-between p-5 shrink-0">
           <div>
             <h1 className="font-display text-xl text-ink font-light">匿名房间</h1>
             {mood && (
-              <div className="mt-1.5">
+              <div className="mt-1.5 space-y-1.5">
                 <ResonanceBadge resonance={mood.resonance} online={mood.online} />
+                <EmotionWeather vector={mood.vector} />
               </div>
             )}
           </div>
@@ -105,7 +121,14 @@ function RoomInner({ slug, sessionId, vector }: { slug: string; sessionId: strin
           </div>
         )}
 
-        <div className="flex-1 overflow-y-auto px-5 py-3 space-y-3">
+        <div
+          ref={scrollRef}
+          onScroll={(e) => {
+            const el = e.currentTarget;
+            stickToBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+          }}
+          className="flex-1 min-h-0 overflow-y-auto px-5 py-3 space-y-3"
+        >
           {historyMsgs.length > 3 && !showHistory && (
             <button
               onClick={() => setShowHistory(true)}
@@ -115,20 +138,21 @@ function RoomInner({ slug, sessionId, vector }: { slug: string; sessionId: strin
             </button>
           )}
           {visibleHistory.map((m, i) => (
-            <MessageBubble key={`h${i}`} msg={m} />
+            <MessageBubble key={`h${i}`} msg={m} onReaction={sendReaction} />
           ))}
           {historyMsgs.length > 0 && newMsgs.length > 0 && (
             <div className="text-center text-[10px] text-ink-faint py-1">— 进房后 —</div>
           )}
           {newMsgs.map((m, i) => (
-            <MessageBubble key={`n${i}`} msg={m} />
+            <MessageBubble key={`n${i}`} msg={m} onReaction={sendReaction} />
           ))}
         </div>
 
-        <footer className="p-5 flex gap-3">
+        <TypingPulse typing={typing} />
+        <footer className="p-5 flex gap-3 shrink-0">
           <input
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => { setInput(e.target.value); sendTyping(); }}
             onKeyDown={(e) => { if (e.key === "Enter") doSend(); }}
             placeholder="说点什么…"
             className="flex-1 px-5 py-3 rounded-full bg-surface border border-line text-ink placeholder:text-ink-faint font-light focus:outline-none focus:border-line-strong focus:bg-surface-strong transition-all duration-300"

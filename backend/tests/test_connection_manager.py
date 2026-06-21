@@ -33,3 +33,24 @@ async def test_leave_removes_vector():
     await mgr.join("emo", a, {"vector": [0, 0, 0, 0]})
     mgr.leave("emo", a)
     assert mgr.vectors("emo") == []
+
+
+async def test_broadcast_excludes_target():
+    """typing / reaction 事件必须 exclude 发送者，避免自己看到自己的输入提示与光点。"""
+    mgr = ConnectionManager()
+    a, b = FakeWS(), FakeWS()
+    await mgr.join("emo", a, {"vector": [0, 0, 0, 0]})
+    await mgr.join("emo", b, {"vector": [0, 0, 0, 0]})
+    await mgr.broadcast("emo", {"type": "typing"}, exclude=a)
+    assert {"type": "typing"} not in a.sent
+    assert {"type": "typing"} in b.sent
+
+
+def test_member_id_is_stable_short_hash():
+    """presence 成员 id 用 session_id 的 md5 前 6 位：稳定、短、不暴露原 session_id。"""
+    from app.ws.rooms_ws import _member_id
+    assert _member_id("sess-abc") == _member_id("sess-abc")
+    assert len(_member_id("sess-abc")) == 6
+    assert _member_id("sess-abc") != "sess-abc"
+    assert _member_id("sess-abc") != _member_id("sess-abd")
+    assert _member_id("") == ""
