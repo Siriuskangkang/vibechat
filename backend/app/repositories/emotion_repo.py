@@ -18,3 +18,13 @@ def save_analysis(db: DBSession, session_id: str, data: dict) -> EmotionAnalysis
     db.commit()
     db.refresh(ea)
     return ea
+
+
+from sqlalchemy import select
+
+
+def get_latest_by_session(db: DBSession, session_id: str):
+    return db.scalar(
+        select(EmotionAnalysis).where(EmotionAnalysis.session_id == session_id)
+        .order_by(EmotionAnalysis.created_at.desc()).limit(1)
+    )
