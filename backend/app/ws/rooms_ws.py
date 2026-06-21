@@ -5,6 +5,7 @@ from ..database import SessionLocal
 from ..repositories import room_repo, message_repo
 from ..services.identity import gen_nickname, make_avatar
 from ..services.mood_field import room_mood, resonance
+from ..services.host_service import BOT_WELCOME
 from .connection_manager import manager
 
 router = APIRouter()
@@ -48,6 +49,14 @@ async def room_ws(websocket: WebSocket, slug: str):
 
         await manager.broadcast(slug, {"type": "member_join", "nickname": nickname, "avatar": avatar})
         await _broadcast_state(slug)
+
+        if len(manager.vectors(slug)) <= 1:
+            await websocket.send_json({
+                "type": "message", "sender": "匿名居民", "nickname": "匿名居民",
+                "role": "bot",
+                "content": BOT_WELCOME.get(room.slug, "这儿不只有你，慢慢说。"),
+                "ts": _ts(),
+            })
 
         while True:
             data = await websocket.receive_json()

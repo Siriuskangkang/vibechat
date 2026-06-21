@@ -13,7 +13,7 @@ def main():
         with c.websocket_connect("/api/ws/room/emo") as ws:
             ws.send_json({"type": "join", "session_id": "test-s", "vector": [-0.5, 0.3, 0.6, 0.55]})
             types = []
-            for _ in range(3):  # member_join, presence, room_mood
+            for _ in range(4):  # member_join, presence, room_mood, bot welcome (solo)
                 types.append(ws.receive_json()["type"])
             ws.send_json({"type": "message", "content": "你好"})
             m = ws.receive_json()
