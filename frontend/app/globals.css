@@ -1,31 +1,112 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* ============ 设计系统 · 深夜情绪星云 ============ */
+@theme {
+  /* 色彩 */
+  --color-bg: #0A0B12;
+  --color-bg-soft: #12131D;
+  --color-surface: rgba(255, 255, 255, 0.045);
+  --color-surface-strong: rgba(255, 255, 255, 0.08);
+  --color-line: rgba(255, 255, 255, 0.09);
+  --color-line-strong: rgba(255, 255, 255, 0.18);
+  --color-ink: #ECE9E2;                 /* 暖白（非冷白） */
+  --color-ink-dim: rgba(236, 233, 226, 0.62);
+  --color-ink-faint: rgba(236, 233, 226, 0.38);
+  --color-accent: #C9A86A;              /* 暖金点缀 */
+  --color-accent-soft: rgba(201, 168, 106, 0.35);
+  --color-danger: #E08A8A;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  /* 字体：标题用中文宋体（文学/情绪温度）+ 英文 Georgia；正文用无衬线 */
+  --font-display: "Songti SC", "STSongti", "Source Han Serif SC", "Noto Serif SC", Georgia, "Times New Roman", serif;
+  --font-sans: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  /* 动效曲线 */
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 :root { color-scheme: dark; }
-html, body { background: #0E0F1A; }
-body { font-family: ui-sans-serif, system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
-* { scrollbar-width: thin; }
+
+/* 手动字体 class（确保生效，不依赖 Tailwind utility 生成） */
+.font-display { font-family: var(--font-display); }
+.font-sans { font-family: var(--font-sans); }
+
+html, body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-weight: 300;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* 全局氛围背景（固定层，所有页面共享） */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 70% 55% at 50% -8%, rgba(109, 91, 255, 0.16), transparent 60%),
+    radial-gradient(ellipse 55% 45% at 88% 102%, rgba(201, 168, 106, 0.10), transparent 60%),
+    radial-gradient(ellipse 55% 45% at 12% 92%, rgba(91, 207, 168, 0.08), transparent 60%);
+}
+
+::selection { background: rgba(201, 168, 106, 0.3); color: var(--color-ink); }
+
+* { scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.14) transparent; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.12); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
+
+/* ============ 动效 ============ */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes breathe {
+  0%, 100% { opacity: 0.45; transform: translate(-50%, 0) scale(1); }
+  50% { opacity: 0.75; transform: translate(-50%, 0) scale(1.08); }
+}
+@keyframes floatSlow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+@keyframes shimmer {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+.animate-fade-up { animation: fadeUp 0.85s var(--ease) both; }
+.animate-fade-in { animation: fadeIn 0.8s var(--ease) both; }
+.animate-breathe { animation: breathe 7s ease-in-out infinite; }
+.animate-float { animation: floatSlow 5s ease-in-out infinite; }
+
+@keyframes ripple {
+  0% { transform: scale(0.6); opacity: 0.55; }
+  100% { transform: scale(3.2); opacity: 0; }
+}
+.animate-ripple { animation: ripple 3.4s ease-out infinite; }
+
+@keyframes glow {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.78; }
+}
+.animate-glow { animation: glow 4.5s ease-in-out infinite; }
+
+@keyframes pulseScale {
+  0%, 100% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.18); opacity: 0.85; }
+}
+.animate-pulse-scale { animation: pulseScale 3.2s ease-in-out infinite; }
+
+/* 消息浮入（聊天） */
+.msg-in { animation: fadeUp 0.5s var(--ease) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
