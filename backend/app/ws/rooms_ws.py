@@ -27,9 +27,15 @@ async def _broadcast_state(slug: str):
     })
 
 
-async def _send_icebreak(slug: str, room, member_emotion: str, recent: list[str]):
+async def _send_icebreak(slug: str, room_id: str, room_slug: str, vibe: str, member_emotion: str, recent: list[str]):
     try:
-        msg = await icebreak(room.slug, room.vibe, member_emotion, recent)
+        msg = await icebreak(room_slug, vibe, member_emotion, recent)
+        # 独立 db session 落库（避免与 ws 的 db 生命周期冲突）
+        db = SessionLocal()
+        try:
+            message_repo.add_message(db, room_id, None, "ai", "房间主持", msg)
+        finally:
+            db.close()
         await manager.broadcast(slug, {
             "type": "host", "sender": "房间主持", "nickname": "房间主持",
             "role": "ai", "content": msg, "ts": _ts(),
@@ -62,17 +68,27 @@ async def room_ws(websocket: WebSocket, slug: str):
         await manager.broadcast(slug, {"type": "member_join", "nickname": nickname, "avatar": avatar})
         await _broadcast_state(slug)
 
-        if len(manager.vectors(slug)) <= 1:
+        # 推送历史给新成员（含之前落库的真人/主持/bot 消息）
+        for m in message_repo.list_messages(db, room.id):
             await websocket.send_json({
+                "type": "history",
+                "nickname": m.nickname,
+                "role": m.sender_role,
+                "content": m.content,
+                "ts": int(m.created_at.timestamp() * 1000),
+            })
+
+        if len(manager.vectors(slug)) <= 1:
+            bot_content = BOT_WELCOME.get(room.slug, "这儿不只有你，慢慢说。")
+            message_repo.add_message(db, room.id, None, "bot", "匿名居民", bot_content)
+            await manager.broadcast(slug, {
                 "type": "message", "sender": "匿名居民", "nickname": "匿名居民",
-                "role": "bot",
-                "content": BOT_WELCOME.get(room.slug, "这儿不只有你，慢慢说。"),
-                "ts": _ts(),
+                "role": "bot", "content": bot_content, "ts": _ts(),
             })
 
         recent_msgs = [m.content for m in message_repo.list_messages(db, room.id)[-5:]]
         member_emotion = "积极" if vector[0] >= 0 else "消极"
-        asyncio.create_task(_send_icebreak(slug, room, member_emotion, recent_msgs))
+        asyncio.create_task(_send_icebreak(slug, room.id, room.slug, room.vibe, member_emotion, recent_msgs))
 
         while True:
             data = await websocket.receive_json()
@@ -84,7 +100,7 @@ async def room_ws(websocket: WebSocket, slug: str):
                 await manager.broadcast(slug, {
                     "type": "message", "sender": nickname, "nickname": nickname,
                     "role": "user", "content": content, "ts": _ts(), "avatar": avatar,
-                })
+                }, exclude=websocket)
     except WebSocketDisconnect:
         pass
     finally:
