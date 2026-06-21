@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     daily_analysis_limit_guest: int = 10
     message_rate_limit_per_min: int = 30
+    cors_origins: str = "http://localhost:3000"
+    host: str = "127.0.0.1"
+    port: int = 8000
 
 
 settings = Settings()

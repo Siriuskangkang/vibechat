@@ -5,6 +5,7 @@ export async function postJSON<T>(path: string, body: unknown): Promise<T> {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
+    credentials: "include",
   });
   const j = await r.json();
   if (!r.ok || j.code !== 0) throw new Error(j.message || "request failed");
@@ -12,7 +13,7 @@ export async function postJSON<T>(path: string, body: unknown): Promise<T> {
 }
 
 export async function getJSON<T>(path: string): Promise<T> {
-  const r = await fetch(`${BASE}${path}`);
+  const r = await fetch(`${BASE}${path}`, { credentials: "include" });
   const j = await r.json();
   if (!r.ok || j.code !== 0) throw new Error(j.message || "request failed");
   return j.data as T;
