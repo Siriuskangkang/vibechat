@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from .database import init_db
 from .core.exceptions import register_exception_handlers
 from .routers import health, session, emotion, rooms
+from .ws import rooms_ws
 
 
 @asynccontextmanager
@@ -24,3 +25,4 @@ app.include_router(health.router, prefix="/api")
 app.include_router(session.router, prefix="/api")
 app.include_router(emotion.router, prefix="/api")
 app.include_router(rooms.router, prefix="/api")
+app.include_router(rooms_ws.router)
