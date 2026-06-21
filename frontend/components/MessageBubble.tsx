@@ -1,9 +1,24 @@
+import type { CSSProperties } from "react";
 import { emotionHsl } from "@/lib/color";
 import type { ChatMessage } from "@/lib/types";
 
 function fmtTime(ts?: number) {
   if (!ts) return "";
   return new Date(ts).toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" });
+}
+
+// 头像形状：用 clip-path / border-radius 让每个用户的几何形状也不同。
+// （drop-shadow 会跟随 clip-path 的实际轮廓发光，box-shadow 不会，故用 filter 包一层）
+function avatarStyle(shape?: string): CSSProperties {
+  switch (shape) {
+    case "square": return { borderRadius: "5px" };
+    case "rounded": return { borderRadius: "28%" };
+    case "triangle": return { clipPath: "polygon(50% 0%, 100% 100%, 0% 100%)" };
+    case "hexagon": return { clipPath: "polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)" };
+    case "diamond": return { clipPath: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)" };
+    case "pentagon": return { clipPath: "polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%)" };
+    default: return { borderRadius: "9999px" }; // circle
+  }
 }
 
 export function MessageBubble({ msg }: { msg: ChatMessage }) {
@@ -45,13 +60,13 @@ export function MessageBubble({ msg }: { msg: ChatMessage }) {
   }
 
   // 真人：自己右对齐 + 强调气泡，他人左对齐 + 玻璃气泡
+  const shape = msg.avatar?.shape;
   return (
     <div className={`msg-in flex ${isSelf ? "justify-end" : "justify-start"} gap-2.5`}>
       {!isSelf && (
-        <div
-          className="w-8 h-8 rounded-full flex-shrink-0 mt-1 border border-white/10"
-          style={{ background: color, boxShadow: `0 0 10px ${color}55` }}
-        />
+        <div className="flex-shrink-0 mt-1" style={{ filter: `drop-shadow(0 0 6px ${color}66)` }}>
+          <div className="w-8 h-8" style={{ background: color, ...avatarStyle(shape) }} />
+        </div>
       )}
       <div className={`max-w-[75%] flex flex-col ${isSelf ? "items-end" : "items-start"}`}>
         <span className="text-[11px] text-ink-faint mb-0.5">{isSelf ? "你" : msg.nickname}</span>
@@ -63,7 +78,9 @@ export function MessageBubble({ msg }: { msg: ChatMessage }) {
         {msg.ts ? <span className="text-[10px] text-ink-faint mt-0.5 px-1">{fmtTime(msg.ts)}</span> : null}
       </div>
       {isSelf && (
-        <div className="w-8 h-8 rounded-full flex-shrink-0 mt-1 border border-white/10 bg-ink/30" />
+        <div className="flex-shrink-0 mt-1" style={{ filter: "drop-shadow(0 0 6px rgba(236,233,226,0.25))" }}>
+          <div className="w-8 h-8 bg-ink/40" style={avatarStyle(shape)} />
+        </div>
       )}
     </div>
   );
