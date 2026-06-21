@@ -34,3 +34,15 @@ def test_match_rooms_sorted_desc():
     assert scored[0]["slug"] == "a"
     assert scored[0]["affinity"] >= scored[1]["affinity"]
     assert "affinity" in scored[0]
+
+
+def test_match_rooms_tiebreak_prefers_exact_match():
+    # 用户向量恰好等于房间 a 的 anchor；即使另一房 affinity round 后也接近，a 应排第一
+    rooms = [
+        {"slug": "b", "name": "B", "color": "#222", "anchor_vector": [-0.6, 0.85, 0.85, 0.7]},
+        {"slug": "a", "name": "A", "color": "#111", "anchor_vector": [-0.6, 0.8, 0.8, 0.6]},
+    ]
+    user = [-0.6, 0.8, 0.8, 0.6]  # 与 a 完全相同
+    scored = match_rooms(user, rooms)
+    assert scored[0]["slug"] == "a"
+    assert "_sim" not in scored[0]

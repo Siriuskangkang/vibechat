@@ -23,5 +23,13 @@ def best_room(user_vec: list[float], rooms: list[dict]) -> dict:
 
 
 def match_rooms(user_vec: list[float], rooms: list[dict]) -> list[dict]:
-    scored = [{**rm, "affinity": affinity(user_vec, rm["anchor_vector"])} for rm in rooms]
-    return sorted(scored, key=lambda x: x["affinity"], reverse=True)
+    # 按未取整的 cosine 排序（避免 round 后平局把错误房间排前），affinity 仍为整数供展示
+    scored = [
+        {**rm, "affinity": affinity(user_vec, rm["anchor_vector"]),
+         "_sim": cosine_sim(user_vec, rm["anchor_vector"])}
+        for rm in rooms
+    ]
+    scored.sort(key=lambda x: x["_sim"], reverse=True)
+    for x in scored:
+        x.pop("_sim", None)
+    return scored
