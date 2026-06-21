@@ -1,6 +1,7 @@
 from ..llm.factory import get_llm
 from ..llm.prompts import EMOTION_SYSTEM, EMOTION_SCHEMA, emotion_user
 from ..core.exceptions import VibeChatError
+from ..core.config import settings
 
 RULE_MAP = [
     (["焦虑", "紧张", "担心", "睡不着", "汇报", "害怕", "压力"], -0.6, 0.8, 0.8, 0.6, "焦虑"),
@@ -37,7 +38,7 @@ async def analyze_emotion(text: str) -> dict:
         text = text[:500]
     try:
         llm = get_llm()
-        resp = await llm.chat(EMOTION_SYSTEM, emotion_user(text), json_schema=EMOTION_SCHEMA)
+        resp = await llm.chat(EMOTION_SYSTEM, emotion_user(text), json_schema=EMOTION_SCHEMA, max_tokens=settings.llm_max_tokens)
         data = resp.raw_json
         if not data:
             raise ValueError("empty json")

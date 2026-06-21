@@ -1,4 +1,5 @@
 from ..llm.factory import get_llm
+from ..core.config import settings
 
 ICEBREAK_SYSTEM = "你是匿名情绪房间的温和主持。用第二人称、克制、不评判的语气，只输出符合 schema 的 JSON。"
 SUMMARY_SYSTEM = "你是匿名情绪房间的温和主持。基于用户在本房的对话与情绪，给一个温柔的情绪小总结，只输出符合 schema 的 JSON。"
@@ -26,7 +27,7 @@ async def icebreak(slug: str, vibe: str, member_emotion: str, recent: list[str])
     prompt = user + '\n要求输出：{"message": str≤40字}'
     try:
         llm = get_llm()
-        resp = await llm.chat(ICEBREAK_SYSTEM, prompt, json_schema={"type": "object"})
+        resp = await llm.chat(ICEBREAK_SYSTEM, prompt, json_schema={"type": "object"}, max_tokens=settings.llm_max_tokens)
         if resp.raw_json and resp.raw_json.get("message"):
             return str(resp.raw_json["message"])[:80]
         raise ValueError("no message")
@@ -39,7 +40,7 @@ async def summarize(member_emotion: str, room_name: str, dialogue: str) -> dict:
     prompt = user + '\n要求输出：{"summary": str≤50字, "takeaway": str≤20字, "mood_end": {"valence": float, "arousal": float}}'
     try:
         llm = get_llm()
-        resp = await llm.chat(SUMMARY_SYSTEM, prompt, json_schema={"type": "object"})
+        resp = await llm.chat(SUMMARY_SYSTEM, prompt, json_schema={"type": "object"}, max_tokens=settings.llm_max_tokens)
         if resp.raw_json and "summary" in resp.raw_json:
             data = resp.raw_json
             data.setdefault("mood_end", {"valence": 0.0, "arousal": 0.3})

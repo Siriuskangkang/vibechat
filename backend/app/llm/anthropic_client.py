@@ -5,6 +5,7 @@ from .base import LLMResponse
 
 
 def _parse_json_lenient(text: str):
+    """宽容解析：提取首个 {...} 平衡块再 json.loads（兼容推理模型在 text 块输出完整 JSON）。"""
     m = re.search(r"\{.*\}", text, re.S)
     if not m:
         return None
@@ -15,6 +16,8 @@ def _parse_json_lenient(text: str):
 
 
 class AnthropicClient:
+    """Anthropic 标准接口实现（/v1/messages）。"""
+
     provider = "anthropic"
 
     def __init__(self, base_url: str, api_key: str, model: str):
@@ -37,25 +40,21 @@ class AnthropicClient:
             "Content-Type": "application/json",
         }
         messages = [{"role": "user", "content": user}]
-        if json_schema:
-            messages.append({"role": "assistant", "content": "{"})
-
         body = {
             "model": self.model,
-            "system": system,
+            "system": system,            # ★ system 单独传
             "messages": messages,
             "max_tokens": max_tokens,
             "temperature": temperature,
         }
 
-        async with httpx.AsyncClient(timeout=60) as c:
-            r = await c.post(f"{self.base_url}/messages", headers=headers, json=body)
+        async with httpx.AsyncClient(timeout=120) as c:
+            r = await c.post(f"{self.base_url}/v1/messages", headers=headers, json=body)
             r.raise_for_status()
             data = r.json()
 
+        # 取 text 块（跳过推理模型的 thinking 块），用宽容解析提取 JSON
         text = "".join(b.get("text", "") for b in data["content"] if b.get("type") == "text")
-        if json_schema:
-            text = "{" + text
         raw = _parse_json_lenient(text) if json_schema else None
         usage = {
             "input_tokens": data["usage"]["input_tokens"],
