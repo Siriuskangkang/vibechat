@@ -7,6 +7,7 @@ export default function HistoryPage() {
   const [list, setList] = useState<HistoryRecord[]>([]);
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
+  const [confirmClear, setConfirmClear] = useState(false);
 
   useEffect(() => {
     setList(getHistory());
@@ -14,10 +15,13 @@ export default function HistoryPage() {
   }, []);
 
   function handleClear() {
-    if (typeof window !== "undefined" && window.confirm("确定要清空所有情绪轨迹吗？此操作不可恢复。")) {
-      clearHistory();
-      setList([]);
-    }
+    setConfirmClear(true);
+  }
+
+  function doClear() {
+    clearHistory();
+    setList([]);
+    setConfirmClear(false);
   }
 
   async function handleExport(rec: HistoryRecord) {
@@ -162,6 +166,42 @@ export default function HistoryPage() {
           ))}
         </div>
       </div>
+
+      {/* 清空确认弹窗（主题化，替代浏览器原生 confirm） */}
+      {confirmClear && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-6 animate-fade-in"
+          style={{ background: "rgba(10,11,18,0.72)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}
+        >
+          <div
+            className="w-full max-w-sm rounded-[22px] p-7 border border-line-strong animate-fade-up"
+            style={{ background: "linear-gradient(160deg, #14151f, #0f1018)", boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }}
+          >
+            <div className="flex items-center gap-2.5 mb-3">
+              <span className="w-2 h-2 rounded-full" style={{ background: "#FF6B5E", boxShadow: "0 0 10px #FF6B5E" }} />
+              <h3 className="font-display text-xl font-light text-ink">清空情绪轨迹？</h3>
+            </div>
+            <p className="text-sm text-ink-dim font-light leading-relaxed mb-6">
+              这些被听见的时光将被全部移除，且无法找回。确定继续吗？
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmClear(false)}
+                className="flex-1 py-2.5 rounded-full bg-surface border border-line text-ink-dim hover:text-ink hover:border-line-strong transition-all duration-300 text-sm"
+              >
+                再想想
+              </button>
+              <button
+                onClick={doClear}
+                className="flex-1 py-2.5 rounded-full text-bg font-medium text-sm transition-all duration-300 hover:scale-[1.03] active:scale-95"
+                style={{ background: "linear-gradient(135deg, #FF6B5E, #E0554A)", boxShadow: "0 8px 24px rgba(255,107,94,0.25)" }}
+              >
+                清空
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

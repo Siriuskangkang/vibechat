@@ -47,7 +47,6 @@ export default function Home() {
       router.push("/analyze");
     } catch (e) {
       setError(e instanceof Error ? e.message : "分析失败，请重试");
-    } finally {
       setLoading(false);
     }
   }

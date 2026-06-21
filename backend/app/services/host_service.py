@@ -7,6 +7,10 @@ ICEBREAK_SYSTEM = (
     "话要短、具体、贴合情绪，不要说教，不要用「我们」开头。只输出符合 schema 的 JSON。"
 )
 SUMMARY_SYSTEM = "你是匿名情绪房间的温和主持。基于用户在本房的对话与情绪，给一个温柔的情绪小总结，只输出符合 schema 的 JSON。"
+NUDGE_SYSTEM = (
+    "你是匿名情绪房间的温和主持。房间安静了一会儿，基于房间氛围和最近的对话，"
+    "自然地抛一个低门槛、不评判的话题，邀请大家开口。话要短、温和、不爹味，不要用「我们」开头。只输出符合 schema 的 JSON。"
+)
 
 ICEBREAK_FALLBACK = {
     "late-night-anxiety": "这间房的人都被某件事压着，说说你正在面对什么？",
@@ -21,6 +25,7 @@ ICEBREAK_FALLBACK = {
     "nervous-hope": "在等什么结果吗？这份悬着的心，说说看。",
     "wronged-sad": "受委屈了？这儿不评判，只听你说。",
     "relief-letgo": "松了口气？这份轻盈，是怎么来的？",
+    "guardian-haven": "你愿意把这句话说出来，本身就很不容易。这儿很安全。",
 }
 BOT_WELCOME = {
     "late-night-anxiety": "这儿不只有你，深夜醒着的人都在。",
@@ -35,6 +40,22 @@ BOT_WELCOME = {
     "nervous-hope": "期待和紧张挨得很近，慢慢说。",
     "wronged-sad": "难过就难过，不用逞强。",
     "relief-letgo": "放下的感觉很好，这儿可以慢慢舒展。",
+    "guardian-haven": "在这儿不用逞强。如果愿意，也可以看看上方那些 24h 都在的号码。",
+}
+NUDGE_FALLBACK = {
+    "late-night-anxiety": "睡不着的时候，脑子里都在转些什么？",
+    "emo": "想说就说；不想说，在这儿待着也挺好。",
+    "joyful-share": "今天最想被接住的那件小事是什么？",
+    "vent-anger": "还在气头上吗？慢慢说，这儿不赶时间。",
+    "calm-solo": "安静一会儿也不错，想聊随时开口。",
+    "lost-advice": "卡住的那件事，愿意从哪头说起？",
+    "lonely-miss": "想念的时候，会先想起哪个画面？",
+    "exhausted-blank": "累了就先歇着，想说再开口。",
+    "touched-warm": "那份暖，愿意多说一点吗？",
+    "nervous-hope": "等着的时候，心里在想什么？",
+    "wronged-sad": "想从哪儿说起都行，这儿不评判。",
+    "relief-letgo": "松开的那一下，是什么感觉？",
+    "guardian-haven": "你不用急着说什么，这儿一直有人。",
 }
 
 
@@ -56,6 +77,20 @@ async def icebreak(slug: str, vibe: str, member_emotion: str, recent: list[str])
         raise ValueError("no message")
     except Exception:
         return ICEBREAK_FALLBACK.get(slug, "欢迎来到这间房，想说什么都可以。")
+
+
+async def nudge(slug: str, vibe: str, recent: list[str]) -> str:
+    """冷场救场：房间安静过久时，由「房间主持」自然抛一个低门槛话题。"""
+    user = f"房间氛围：{vibe}；最近对话：{recent}"
+    prompt = user + '\n要求输出：{"message": str≤30字}'
+    try:
+        llm = get_llm()
+        resp = await llm.chat(NUDGE_SYSTEM, prompt, json_schema={"type": "object"}, max_tokens=settings.llm_max_tokens)
+        if resp.raw_json and resp.raw_json.get("message"):
+            return str(resp.raw_json["message"])[:60]
+        raise ValueError("no message")
+    except Exception:
+        return NUDGE_FALLBACK.get(slug, "想聊点什么？这儿不着急。")
 
 
 async def summarize(member_emotion: str, room_name: str, dialogue: str) -> dict:

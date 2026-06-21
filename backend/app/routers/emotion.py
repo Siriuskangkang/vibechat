@@ -38,6 +38,15 @@ async def analyze(payload: AnalyzeRequest, request: Request, db: DBSession = Dep
     scored = match_rooms(data["vector"], rooms)
     top = scored[0]
 
+    # 安全闭环：检测到风险倾向时，服务端改路由到守护房（而非只把 help_needed 吐给前端）
+    risk = has_risk(payload.text, data.get("risk_flag", False))
+    if risk:
+        guardian = room_repo.get_room_by_slug(db, "guardian-haven")
+        if guardian:
+            top = {"slug": guardian.slug, "name": guardian.name,
+                   "color": guardian.color, "description": guardian.description,
+                   "affinity": 100}
+
     return {
         "code": 0, "message": "ok",
         "data": {
@@ -45,10 +54,11 @@ async def analyze(payload: AnalyzeRequest, request: Request, db: DBSession = Dep
             "room": {"slug": top["slug"], "name": top["name"],
                      "color": top["color"], "description": top["description"]},
             "affinity": top["affinity"],
-            "alternatives": [
+            "alternatives": [] if risk else [
                 {"slug": x["slug"], "name": x["name"], "color": x["color"], "affinity": x["affinity"]}
                 for x in scored[1:4]
             ],
-            "help_needed": has_risk(payload.text, data.get("risk_flag", False)),
+            "help_needed": risk,
+            "guardian": risk,
         },
     }

@@ -10,5 +10,6 @@
   {"slug":"touched-warm","name":"感动温暖","description":"被什么打动了，心里暖暖的","anchor_vector":[0.5,0.4,0.6,0.6],"color":"#E89B8A","vibe":"柔软、微光、暖意"},
   {"slug":"nervous-hope","name":"紧张期待","description":"在等一个结果，又紧张又期待","anchor_vector":[0.1,0.75,0.7,0.5],"color":"#6BB8C9","vibe":"绷着、心跳、悬而未决"},
   {"slug":"wronged-sad","name":"委屈难过","description":"受委屈了，有点想哭，说不上来","anchor_vector":[-0.55,0.4,0.65,0.65],"color":"#7E8FC9","vibe":"酸涩、哽咽、想哭"},
-  {"slug":"relief-letgo","name":"释怀放下","description":"松了口气，终于放下了什么","anchor_vector":[0.4,0.2,0.35,0.4],"color":"#8FD4B8","vibe":"轻盈、舒展、慢慢松开"}
+  {"slug":"relief-letgo","name":"释怀放下","description":"松了口气，终于放下了什么","anchor_vector":[0.4,0.2,0.35,0.4],"color":"#8FD4B8","vibe":"轻盈、舒展、慢慢松开"},
+  {"slug":"guardian-haven","name":"此刻有人接住你","description":"你说的这些很重要，这里很安全，也有专业的人可以帮你","anchor_vector":[0.20,0.20,0.40,0.55],"color":"#7FB3A8","vibe":"稳定、陪伴、被接住"}
 ]

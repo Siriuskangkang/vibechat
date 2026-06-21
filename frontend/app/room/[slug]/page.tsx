@@ -9,6 +9,7 @@ import { MessageBubble } from "@/components/MessageBubble";
 import { LoadingOverlay } from "@/components/LoadingOverlay";
 import { postJSON } from "@/lib/api";
 import { updateHistory } from "@/lib/history";
+import { HelpCard } from "@/components/HelpCard";
 
 function RoomInner({ slug, sessionId, vector }: { slug: string; sessionId: string; vector: number[] }) {
   const router = useRouter();
@@ -97,6 +98,12 @@ function RoomInner({ slug, sessionId, vector }: { slug: string; sessionId: strin
             离开房间
           </button>
         </header>
+
+        {slug === "guardian-haven" && (
+          <div className="px-5 pt-1 pb-2">
+            <HelpCard />
+          </div>
+        )}
 
         <div className="flex-1 overflow-y-auto px-5 py-3 space-y-3">
           {historyMsgs.length > 3 && !showHistory && (
